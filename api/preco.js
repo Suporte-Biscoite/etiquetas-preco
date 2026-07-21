@@ -2,13 +2,45 @@
 // Função serverless (Vercel) que consulta a pergunta 9294 do Metabase
 // (Relatório de Preços Ativos) filtrando por SKU ou nome do produto.
 //
-// A API key do Metabase NUNCA fica no front-end — ela vive apenas
-// na variável de ambiente METABASE_API_KEY, configurada no painel
-// do Vercel (Settings > Environment Variables).
-// Agora vai
+// A conta Biscoitê NÃO tem permissão de admin nessa instância do Metabase
+// pra gerar uma API Key de verdade (confirmado com o suporte do Nexaas —
+// mesma situação já documentada no Cloud Function do relatório 8164).
+// Por isso a autenticação aqui é por SESSÃO (login/senha), no mesmo padrão
+// já validado naquele pipeline: login do zero a cada execução, sem cache
+// de token entre chamadas.
+//
+// Credenciais NUNCA ficam no front-end — vivem só nas variáveis de
+// ambiente METABASE_EMAIL e METABASE_PASSWORD (Vercel > Settings >
+// Environment Variables, marcadas como "Sensitive").
 
-const METABASE_URL = "https://bi.nexaas.com/api/card/9294/query";
+const METABASE_BASE_URL = "https://bi.nexaas.com";
+const CARD_ID = 9294;
 const TABELA_PRECO_PADRAO = "TABELA 1 - PROPRIAS E FRANQUIAS PADRAO";
+
+async function loginMetabase(email, password) {
+  const resp = await fetch(`${METABASE_BASE_URL}/api/session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: email, password }),
+  });
+
+  const text = await resp.text();
+  if (!resp.ok) {
+    throw new Error(`Login no Metabase falhou (status ${resp.status}): ${text.slice(0, 300)}`);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Login retornou resposta não-JSON: ${text.slice(0, 300)}`);
+  }
+
+  if (!data.id) {
+    throw new Error(`Login retornou 200 mas sem token de sessão: ${text.slice(0, 300)}`);
+  }
+  return data.id;
+}
 
 export default async function handler(req, res) {
   // CORS básico (ajuste o domínio quando publicar em produção)
@@ -22,10 +54,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Informe um SKU ou nome de produto para buscar." });
   }
 
-  if (!process.env.METABASE_API_KEY) {
+  if (!process.env.METABASE_EMAIL || !process.env.METABASE_PASSWORD) {
     return res.status(500).json({
-      error: "METABASE_API_KEY não configurada no ambiente. Gere uma API Key no Metabase (Admin > API Keys) e adicione essa variável de ambiente.",
+      error: "METABASE_EMAIL / METABASE_PASSWORD não configuradas no ambiente. Adicione essas variáveis no Vercel com as credenciais de login do Metabase.",
     });
+  }
+
+  let sessionToken;
+  try {
+    sessionToken = await loginMetabase(process.env.METABASE_EMAIL, process.env.METABASE_PASSWORD);
+  } catch (err) {
+    return res.status(401).json({ error: "Falha ao autenticar no Metabase.", details: String(err.message || err) });
   }
 
   const tabelaPreco = tabela && tabela.trim() ? tabela.trim() : TABELA_PRECO_PADRAO;
@@ -54,16 +93,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(METABASE_URL, {
+    const response = await fetch(`${METABASE_BASE_URL}/api/card/${CARD_ID}/query`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.METABASE_API_KEY,
+        "X-Metabase-Session": sessionToken,
       },
       body: JSON.stringify({ parameters }),
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return res.status(502).json({ error: "Metabase retornou resposta não-JSON.", details: text.slice(0, 300) });
+    }
 
     if (!response.ok) {
       return res.status(response.status).json({ error: data?.message || "Erro ao consultar o Metabase.", details: data });

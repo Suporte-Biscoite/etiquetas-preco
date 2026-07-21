@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biscoitê — Etiquetas de Preço</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --cream:      #FBF6EF;
+    --cream-2:    #F1E4C8;
+    --cocoa:      #3B2A1E;
+    --kraft:      #C9A468;
+    --jam:        #A9382B;
+    --gold:       #C98A2C;
+    --line:       rgba(59,42,30,0.18);
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at top left, rgba(201,164,104,0.25), transparent 55%),
+      var(--cream);
+    font-family:'Inter', sans-serif;
+    color:var(--cocoa);
+  }
+
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:40px 24px 80px;
+  }
+
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:32px;
+    border-bottom:2px dashed var(--line);
+    padding-bottom:20px;
+  }
+
+  header h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(28px, 4vw, 40px);
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+
+  header .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--jam);
+    display:block;
+    margin-bottom:4px;
+  }
+
+  header .sub{
+    font-size:14px;
+    color:rgba(59,42,30,0.65);
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns:320px 1fr;
+    gap:32px;
+    align-items:start;
+  }
+
+  @media (max-width: 760px){
+    .layout{ grid-template-columns:1fr; }
+  }
+
+  .panel{
+    background:var(--cream-2);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+  }
+
+  .panel h2{
+    font-family:'Fraunces', serif;
+    font-size:18px;
+    font-weight:600;
+    margin:0 0 16px;
+  }
+
+  .field{ margin-bottom:16px; }
+
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:rgba(59,42,30,0.7);
+    margin-bottom:6px;
+  }
+
+  .toggle{
+    display:flex;
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:3px;
+    gap:3px;
+  }
+
+  .toggle button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:8px 10px;
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    color:rgba(59,42,30,0.55);
+    border-radius:7px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+
+  .toggle button.active{
+    background:var(--cocoa);
+    color:var(--cream);
+  }
+
+  input[type="text"]{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--cream);
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    color:var(--cocoa);
+  }
+  input[type="text"]:focus{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+
+  .btn-search{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:9px;
+    background:var(--jam);
+    color:var(--cream);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .1s ease, background .15s ease;
+  }
+  .btn-search:hover{ background:#8f2f24; }
+  .btn-search:active{ transform:scale(0.98); }
+  .btn-search:disabled{ opacity:0.55; cursor:default; }
+
+  .hint{
+    font-size:12px;
+    color:rgba(59,42,30,0.55);
+    margin-top:14px;
+    line-height:1.5;
+  }
+
+  .status{
+    min-height:24px;
+    font-size:13px;
+    margin-bottom:16px;
+  }
+  .status.error{ color:var(--jam); font-weight:600; }
+  .status.loading{ color:rgba(59,42,30,0.6); }
+
+  .results{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    gap:28px;
+  }
+
+  .empty{
+    font-family:'Fraunces', serif;
+    font-size:16px;
+    color:rgba(59,42,30,0.45);
+    padding:48px 12px;
+    text-align:center;
+    border:2px dashed var(--line);
+    border-radius:16px;
+  }
+
+  /* --- Etiqueta / tag --- */
+  .tag{
+    position:relative;
+    background:
+      linear-gradient(180deg, #FFFDF9, var(--cream-2) 90%);
+    border:1px solid var(--line);
+    border-radius:14px 14px 10px 10px;
+    padding:22px 18px 18px;
+    box-shadow:0 10px 22px -12px rgba(59,42,30,0.35);
+    transform:rotate(var(--tilt, -1.4deg));
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .tag:nth-child(even){ --tilt: 1.2deg; }
+  .tag:hover{
+    transform:rotate(0deg) translateY(-3px);
+    box-shadow:0 16px 26px -12px rgba(59,42,30,0.4);
+  }
+
+  .tag::before{
+    /* furo da etiqueta */
+    content:"";
+    position:absolute;
+    top:10px; left:50%;
+    width:12px; height:12px;
+    margin-left:-6px;
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:50%;
+    box-shadow:inset 0 0 0 3px var(--cream-2);
+  }
+
+  .tag .categoria{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin:6px 0 2px;
+  }
+
+  .tag h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:17px;
+    line-height:1.25;
+    margin:0 0 10px;
+    min-height:43px;
+  }
+
+  .tag .sku-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:rgba(59,42,30,0.65);
+    margin-bottom:12px;
+    border-top:1px dashed var(--line);
+    border-bottom:1px dashed var(--line);
+    padding:6px 0;
+  }
+
+  .tag .status-badge{
+    display:inline-block;
+    font-size:10px;
+    font-weight:600;
+    padding:2px 7px;
+    border-radius:20px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .status-ativo{ background:#DCE9D5; color:#3E6B33; }
+  .status-inativo{ background:#EAD9D6; color:var(--jam); }
+  .status-outro{ background:var(--cream-2); color:rgba(59,42,30,0.6); }
+
+  .tag .preco{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:26px;
+    color:var(--jam);
+    margin:2px 0 14px;
+  }
+  .tag .preco small{
+    font-family:'Inter', sans-serif;
+    font-size:12px;
+    font-weight:600;
+    color:rgba(59,42,30,0.5);
+    display:block;
+    margin-top:-2px;
+  }
+
+  .btn-pdf{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid var(--cocoa);
+    background:transparent;
+    color:var(--cocoa);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .btn-pdf:hover{ background:var(--cocoa); color:var(--cream); }
+
+  footer{
+    margin-top:60px;
+    text-align:center;
+    font-size:11px;
+    color:rgba(59,42,30,0.4);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <span class="eyebrow">Matriz · Preços ativos</span>
+        <h1>Etiquetas Biscoitê</h1>
+      </div>
+      <div class="sub">Busque por SKU ou nome e gere a etiqueta pronta pra impressão</div>
+    </header>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>Buscar produto</h2>
+
+        <div class="field">
+          <label>Buscar por</label>
+          <div class="toggle">
+            <button type="button" id="btnNome" class="active">Nome</button>
+            <button type="button" id="btnSku">SKU</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="lblBusca">Nome do produto</label>
+          <input type="text" id="inputBusca" placeholder="ex: biscoito amanteigado" autocomplete="off">
+        </div>
+
+        <button class="btn-search" id="btnBuscar">Buscar preço</button>
+
+        <div class="hint">
+          A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong> por padrão.
+        </div>
+      </div>
+
+      <div>
+        <div class="status" id="status"></div>
+        <div class="results" id="results">
+          <div class="empty">Faça uma busca para ver as etiquetas aqui.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Fonte: Metabase — Relatório de Preços Ativos (pergunta 9294)</footer>
+  </div>
+
+<script>
+  const { jsPDF } = window.jspdf;
+
+  const btnNome = document.getElementById('btnNome');
+  const btnSku = document.getElementById('btnSku');
+  const lblBusca = document.getElementById('lblBusca');
+  const inputBusca = document.getElementById('inputBusca');
+  const btnBuscar = document.getElementById('btnBuscar');
+  const statusEl = document.getElementById('status');
+  const resultsEl = document.getElementById('results');
+
+  let tipoBusca = 'nome';
+
+  btnNome.addEventListener('click', () => {
+    tipoBusca = 'nome';
+    btnNome.classList.add('active');
+    btnSku.classList.remove('active');
+    lblBusca.textContent = 'Nome do produto';
+    inputBusca.placeholder = 'ex: biscoito amanteigado';
+  });
+
+  btnSku.addEventListener('click', () => {
+    tipoBusca = 'sku';
+    btnSku.classList.add('active');
+    btnNome.classList.remove('active');
+    lblBusca.textContent = 'Código SKU';
+    inputBusca.placeholder = 'ex: 1002345';
+  });
+
+  inputBusca.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') buscar();
+  });
+  btnBuscar.addEventListener('click', buscar);
+
+  function formatarPreco(valor){
+    const num = Number(valor);
+    if (Number.isNaN(num)) return valor;
+    return num.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+  }
+
+  function statusClasse(status){
+    if (!status) return 'status-outro';
+    const s = status.toLowerCase();
+    if (s === 'ativo') return 'status-ativo';
+    if (s === 'inativo' || s === 'descontinuado') return 'status-inativo';
+    return 'status-outro';
+  }
+
+  async function buscar(){
+    const valor = inputBusca.value.trim();
+    if (!valor){
+      statusEl.textContent = 'Digite um nome ou SKU antes de buscar.';
+      statusEl.className = 'status error';
+      return;
+    }
+
+    statusEl.textContent = 'Buscando...';
+    statusEl.className = 'status loading';
+    resultsEl.innerHTML = '';
+    btnBuscar.disabled = true;
+
+    try{
+      const url = `/api/preco?tipo=${tipoBusca}&valor=${encodeURIComponent(valor)}`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+
+      if (!resp.ok){
+        statusEl.textContent = data.error || 'Erro ao buscar.';
+        statusEl.className = 'status error';
+        resultsEl.innerHTML = '<div class="empty">Nada encontrado.</div>';
+        return;
+      }
+
+      const produtos = data.produtos || [];
+      statusEl.textContent = produtos.length
+        ? `${produtos.length} produto(s) encontrado(s).`
+        : 'Nenhum produto encontrado para essa busca.';
+      statusEl.className = 'status';
+
+      if (!produtos.length){
+        resultsEl.innerHTML = '<div class="empty">Nenhum produto encontrado.<br>Tente outro termo ou confira o SKU.</div>';
+        return;
+      }
+
+      renderResultados(produtos);
+    } catch(err){
+      statusEl.textContent = 'Falha de conexão com o servidor.';
+      statusEl.className = 'status error';
+    } finally {
+      btnBuscar.disabled = false;
+    }
+  }
+
+  function renderResultados(produtos){
+    resultsEl.innerHTML = '';
+    produtos.forEach((p, i) => {
+      const nome = p['Nome produto'] || '—';
+      const sku = p['SKU'] || '—';
+      const categoria = p['Categoria'] || '';
+      const status = p['Status'] || '';
+      const preco = p['Preço'];
+      const tabela = p['Tabela de preço'] || '';
+
+      const card = document.createElement('div');
+      card.className = 'tag';
+      card.innerHTML = `
+        <div class="categoria">${categoria || 'Sem categoria'}</div>
+        <h3>${nome}</h3>
+        <div class="sku-row">
+          <span>SKU ${sku}</span>
+          <span class="status-badge ${statusClasse(status)}" style="margin-left:auto">${status || '—'}</span>
+        </div>
+        <div class="preco">${formatarPreco(preco)}<small>${tabela}</small></div>
+        <button class="btn-pdf">Gerar etiqueta PDF</button>
+      `;
+
+      card.querySelector('.btn-pdf').addEventListener('click', () => {
+        gerarPDF({ nome, sku, preco: formatarPreco(preco), tabela });
+      });
+
+      resultsEl.appendChild(card);
+    });
+  }
+
+  function gerarPDF({ nome, sku, preco, tabela }){
+    // Etiqueta 100mm x 60mm, pronta pra impressão
+    const doc = new jsPDF({ unit: 'mm', format: [100, 60] });
+
+    const cocoa = '#3B2A1E';
+    const jam = '#A9382B';
+    const gold = '#C98A2C';
+
+    // fundo
+    doc.setFillColor('#FBF6EF');
+    doc.rect(0, 0, 100, 60, 'F');
+
+    // borda tracejada
+    doc.setDrawColor(gold);
+    doc.setLineWidth(0.4);
+    doc.setLineDashPattern([1.5, 1.5], 0);
+    doc.roundedRect(3, 3, 94, 54, 4, 4, 'S');
+    doc.setLineDashPattern([], 0);
+
+    // furo
+    doc.setFillColor('#FBF6EF');
+    doc.setDrawColor(cocoa);
+    doc.setLineWidth(0.3);
+    doc.circle(50, 9, 2.2, 'FD');
+
+    // nome do produto
+    doc.setTextColor(cocoa);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    const nomeLinhas = doc.splitTextToSize(nome, 84);
+    doc.text(nomeLinhas, 50, 22, { align: 'center' });
+
+    // sku
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor('#7A5F45');
+    doc.text(`SKU ${sku}`, 50, 22 + nomeLinhas.length * 5 + 4, { align: 'center' });
+
+    // linha tracejada separadora
+    doc.setDrawColor(gold);
+    doc.setLineWidth(0.3);
+    doc.setLineDashPattern([1, 1], 0);
+    doc.line(12, 40, 88, 40);
+    doc.setLineDashPattern([], 0);
+
+    // preço
+    doc.setTextColor(jam);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text(preco, 50, 51, { align: 'center' });
+
+    // tabela de preço
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor('#7A5F45');
+    doc.text(tabela.toUpperCase(), 50, 57, { align: 'center' });
+
+    const nomeArquivo = `etiqueta_${sku}`.replace(/[^a-z0-9_-]/gi, '_') + '.pdf';
+    doc.save(nomeArquivo);
+  }
+</script>
+</body>
+</html>

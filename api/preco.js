@@ -5,6 +5,7 @@
 // A API key do Metabase NUNCA fica no front-end — ela vive apenas
 // na variável de ambiente METABASE_API_KEY, configurada no painel
 // do Vercel (Settings > Environment Variables).
+// Agora vai
 
 const METABASE_URL = "https://bi.nexaas.com/api/card/9294/query";
 const TABELA_PRECO_PADRAO = "TABELA 1 - PROPRIAS E FRANQUIAS PADRAO";

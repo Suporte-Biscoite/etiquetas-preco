@@ -483,7 +483,8 @@
 
   function gerarPDF({ nome, sku, preco, tabela }){
     // Etiqueta 100mm x 60mm, pronta pra impressão
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [100, 60] });
+    const doc = new jsPDF('l', 'mm', [100, 60]);
+    console.log('Tamanho real da página:', doc.internal.pageSize.getWidth(), 'x', doc.internal.pageSize.getHeight());
 
     const cocoa = '#3B2A1E';
     const jam = '#A9382B';

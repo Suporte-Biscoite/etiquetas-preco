@@ -15,7 +15,13 @@
 
 const METABASE_BASE_URL = "https://bi.nexaas.com";
 const CARD_ID = 9294;
-const TABELA_PRECO_PADRAO = "TABELA 1 - PROPRIAS E FRANQUIAS PADRAO";
+
+// Tabelas de preço por "loja". A loja "padrao" é de acesso livre; a
+// "aeroporto" exige a senha em AEROPORTO_SENHA (ver checagem abaixo).
+const TABELAS_POR_LOJA = {
+  padrao: "TABELA 1 - PROPRIAS E FRANQUIAS PADRAO",
+  aeroporto: "TABELA - AEROPORTO GRU",
+};
 
 async function loginMetabase(email, password) {
   const resp = await fetch(`${METABASE_BASE_URL}/api/session`, {
@@ -48,10 +54,23 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const { tipo, valor, tabela } = req.query;
+  const { tipo, valor, tabela, loja, senha } = req.query;
+  const lojaAtual = loja === "aeroporto" ? "aeroporto" : "padrao";
 
   if (!valor || !valor.trim()) {
     return res.status(400).json({ error: "Informe um SKU ou nome de produto para buscar." });
+  }
+
+  // A loja Aeroporto exige senha — validada aqui no backend também (não só
+  // no front-end), pra ninguém conseguir consultar essa tabela só chamando
+  // a API direto sem saber a senha.
+  if (lojaAtual === "aeroporto") {
+    if (!process.env.AEROPORTO_SENHA) {
+      return res.status(500).json({ error: "AEROPORTO_SENHA não configurada no ambiente." });
+    }
+    if (!senha || senha !== process.env.AEROPORTO_SENHA) {
+      return res.status(401).json({ error: "Senha da loja Aeroporto incorreta." });
+    }
   }
 
   if (!process.env.METABASE_EMAIL || !process.env.METABASE_PASSWORD) {
@@ -67,7 +86,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Falha ao autenticar no Metabase.", details: String(err.message || err) });
   }
 
-  const tabelaPreco = tabela && tabela.trim() ? tabela.trim() : TABELA_PRECO_PADRAO;
+  const tabelaPreco = tabela && tabela.trim() ? tabela.trim() : TABELAS_POR_LOJA[lojaAtual];
 
   const parameters = [
     {
@@ -117,11 +136,17 @@ export default async function handler(req, res) {
     const cols = (data?.data?.cols || []).map((c) => c.display_name || c.name);
     const rows = data?.data?.rows || [];
 
-    const produtos = rows.map((row) => {
+    const produtosBrutos = rows.map((row) => {
       const obj = {};
       cols.forEach((col, i) => (obj[col] = row[i]));
       return obj;
     });
+
+    // Só mostramos SKUs com status "Ativo" — o relatório também traz
+    // Rascunho/Inativo/Descontinuado, que não devem virar etiqueta.
+    const produtos = produtosBrutos.filter(
+      (p) => (p["Status"] || "").trim().toLowerCase() === "ativo"
+    );
 
     return res.status(200).json({ produtos, total: produtos.length });
   } catch (err) {

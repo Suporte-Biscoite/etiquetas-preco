@@ -95,6 +95,59 @@
     margin:0 0 16px;
   }
 
+  .lojas-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:20px;
+  }
+
+  .lojas-tabs button{
+    flex:1;
+    border:1px solid var(--line);
+    background:var(--cream);
+    color:var(--cocoa);
+    padding:9px 6px;
+    font-family:'Inter', sans-serif;
+    font-size:12px;
+    font-weight:600;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+
+  .lojas-tabs button.active{
+    background:var(--jam);
+    border-color:var(--jam);
+    color:var(--cream);
+  }
+
+  .lojas-tabs button .cadeado{
+    font-size:10px;
+    margin-left:3px;
+    opacity:0.75;
+  }
+
+  .login-loja{
+    background:var(--cream);
+    border:1px dashed var(--gold);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:16px;
+  }
+
+  .login-loja p{
+    font-size:12.5px;
+    color:rgba(59,42,30,0.7);
+    margin:0 0 10px;
+  }
+
+  .login-loja .erro{
+    font-size:12px;
+    color:var(--jam);
+    font-weight:600;
+    margin-top:8px;
+  }
+
   .field{ margin-bottom:16px; }
 
   .field label{
@@ -435,6 +488,21 @@
 
     <div class="layout">
       <div class="panel">
+        <div class="lojas-tabs">
+          <button type="button" id="tabPadrao" class="active">Loja Padrão</button>
+          <button type="button" id="tabAeroporto">Aeroporto GRU <span class="cadeado">🔒</span></button>
+        </div>
+
+        <div class="login-loja" id="loginLoja" style="display:none">
+          <p>A tabela de preço do Aeroporto GRU é restrita. Digite a senha da loja pra acessar:</p>
+          <div class="field" style="margin-bottom:10px">
+            <input type="password" id="inputSenhaLoja" placeholder="Senha da loja">
+          </div>
+          <button class="btn-search" id="btnEntrarLoja">Entrar</button>
+          <div class="erro" id="erroLoja"></div>
+        </div>
+
+        <div id="areaBusca">
         <h2>Buscar produto</h2>
 
         <div class="field">
@@ -452,8 +520,9 @@
 
         <button class="btn-search" id="btnBuscar">Buscar preço</button>
 
-        <div class="hint">
-          A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong> por padrão.
+        <div class="hint" id="hintTabela">
+          A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong>.
+        </div>
         </div>
 
         <div class="cart">
@@ -494,6 +563,91 @@
   let tipoBusca = 'nome';
   // carrinho: { sku: { sku, nome, preco (numero cru), qtd } }
   let carrinho = {};
+
+  // --- Controle de loja (padrão / aeroporto restrito) ---
+  const tabPadrao = document.getElementById('tabPadrao');
+  const tabAeroporto = document.getElementById('tabAeroporto');
+  const loginLojaEl = document.getElementById('loginLoja');
+  const areaBuscaEl = document.getElementById('areaBusca');
+  const inputSenhaLoja = document.getElementById('inputSenhaLoja');
+  const btnEntrarLoja = document.getElementById('btnEntrarLoja');
+  const erroLojaEl = document.getElementById('erroLoja');
+  const hintTabelaEl = document.getElementById('hintTabela');
+
+  let lojaAtual = 'padrao';
+  let senhaAeroporto = null; // fica só na memória da aba, nunca persistida
+
+  tabPadrao.addEventListener('click', () => {
+    lojaAtual = 'padrao';
+    tabPadrao.classList.add('active');
+    tabAeroporto.classList.remove('active');
+    loginLojaEl.style.display = 'none';
+    areaBuscaEl.style.display = 'block';
+    hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong>.';
+    resultsEl.innerHTML = '<div class="empty">Faça uma busca para ver os produtos aqui.</div>';
+    statusEl.textContent = '';
+  });
+
+  tabAeroporto.addEventListener('click', () => {
+    tabAeroporto.classList.add('active');
+    tabPadrao.classList.remove('active');
+    resultsEl.innerHTML = '<div class="empty">Faça uma busca para ver os produtos aqui.</div>';
+    statusEl.textContent = '';
+
+    if (senhaAeroporto){
+      // já autenticado nessa sessão da página
+      lojaAtual = 'aeroporto';
+      loginLojaEl.style.display = 'none';
+      areaBuscaEl.style.display = 'block';
+      hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela — Aeroporto GRU</strong>.';
+    } else {
+      areaBuscaEl.style.display = 'none';
+      loginLojaEl.style.display = 'block';
+      inputSenhaLoja.value = '';
+      erroLojaEl.textContent = '';
+      inputSenhaLoja.focus();
+    }
+  });
+
+  inputSenhaLoja.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') tentarEntrarLoja();
+  });
+  btnEntrarLoja.addEventListener('click', tentarEntrarLoja);
+
+  async function tentarEntrarLoja(){
+    const senha = inputSenhaLoja.value;
+    if (!senha){
+      erroLojaEl.textContent = 'Digite a senha da loja.';
+      return;
+    }
+
+    btnEntrarLoja.disabled = true;
+    erroLojaEl.textContent = '';
+
+    try{
+      const resp = await fetch('/api/login-loja', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loja: 'aeroporto', senha }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok){
+        erroLojaEl.textContent = data.error || 'Senha incorreta.';
+        return;
+      }
+
+      senhaAeroporto = senha;
+      lojaAtual = 'aeroporto';
+      loginLojaEl.style.display = 'none';
+      areaBuscaEl.style.display = 'block';
+      hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela — Aeroporto GRU</strong>.';
+    } catch(err){
+      erroLojaEl.textContent = 'Falha de conexão ao validar a senha.';
+    } finally {
+      btnEntrarLoja.disabled = false;
+    }
+  }
 
   btnNome.addEventListener('click', () => {
     tipoBusca = 'nome';
@@ -549,11 +703,20 @@
     btnBuscar.disabled = true;
 
     try{
-      const url = `/api/preco?tipo=${tipoBusca}&valor=${encodeURIComponent(valor)}`;
+      let url = `/api/preco?tipo=${tipoBusca}&valor=${encodeURIComponent(valor)}&loja=${lojaAtual}`;
+      if (lojaAtual === 'aeroporto' && senhaAeroporto){
+        url += `&senha=${encodeURIComponent(senhaAeroporto)}`;
+      }
       const resp = await fetch(url);
       const data = await resp.json();
 
       if (!resp.ok){
+        if (resp.status === 401 && lojaAtual === 'aeroporto'){
+          senhaAeroporto = null;
+          areaBuscaEl.style.display = 'none';
+          loginLojaEl.style.display = 'block';
+          erroLojaEl.textContent = 'Sessão expirada ou senha inválida. Entre novamente.';
+        }
         statusEl.textContent = data.error || 'Erro ao buscar.';
         statusEl.className = 'status error';
         resultsEl.innerHTML = '<div class="empty">Nada encontrado.</div>';

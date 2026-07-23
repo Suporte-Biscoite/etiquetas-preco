@@ -31,9 +31,9 @@
   }
 
   .wrap{
-    max-width:1080px;
+    max-width:1200px;
     margin:0 auto;
-    padding:40px 24px 80px;
+    padding:40px 24px 100px;
   }
 
   header{
@@ -72,12 +72,12 @@
 
   .layout{
     display:grid;
-    grid-template-columns:320px 1fr;
-    gap:32px;
+    grid-template-columns:300px 1fr;
+    gap:28px;
     align-items:start;
   }
 
-  @media (max-width: 760px){
+  @media (max-width: 860px){
     .layout{ grid-template-columns:1fr; }
   }
 
@@ -85,12 +85,12 @@
     background:var(--cream-2);
     border:1px solid var(--line);
     border-radius:16px;
-    padding:24px;
+    padding:22px;
   }
 
   .panel h2{
     font-family:'Fraunces', serif;
-    font-size:18px;
+    font-size:17px;
     font-weight:600;
     margin:0 0 16px;
   }
@@ -135,7 +135,7 @@
     color:var(--cream);
   }
 
-  input[type="text"]{
+  input[type="text"], input[type="number"]{
     width:100%;
     padding:11px 12px;
     border:1px solid var(--line);
@@ -145,7 +145,7 @@
     font-size:14px;
     color:var(--cocoa);
   }
-  input[type="text"]:focus{
+  input[type="text"]:focus, input[type="number"]:focus{
     outline:2px solid var(--gold);
     outline-offset:1px;
   }
@@ -174,6 +174,106 @@
     line-height:1.5;
   }
 
+  /* --- Lista de impressão (carrinho) --- */
+  .cart{
+    margin-top:22px;
+    padding-top:18px;
+    border-top:2px dashed var(--line);
+  }
+
+  .cart-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:8px 10px;
+    margin-bottom:8px;
+  }
+
+  .cart-item .info{
+    flex:1;
+    min-width:0;
+  }
+
+  .cart-item .nome{
+    font-size:12.5px;
+    font-weight:600;
+    line-height:1.25;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .cart-item .preco{
+    font-size:11.5px;
+    color:var(--jam);
+    font-weight:600;
+  }
+
+  .cart-item input[type="number"]{
+    width:50px;
+    padding:6px;
+    text-align:center;
+    font-size:13px;
+  }
+
+  .cart-item .remove{
+    background:none;
+    border:none;
+    color:rgba(59,42,30,0.4);
+    font-size:16px;
+    cursor:pointer;
+    line-height:1;
+    padding:2px 4px;
+  }
+  .cart-item .remove:hover{ color:var(--jam); }
+
+  .cart-empty{
+    font-size:12.5px;
+    color:rgba(59,42,30,0.5);
+    text-align:center;
+    padding:18px 6px;
+  }
+
+  .cart-total{
+    font-size:12.5px;
+    font-weight:600;
+    margin:12px 0;
+    text-align:center;
+    color:rgba(59,42,30,0.75);
+  }
+
+  .btn-gerar-lote{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:9px;
+    background:var(--cocoa);
+    color:var(--cream);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    margin-bottom:8px;
+  }
+  .btn-gerar-lote:disabled{ opacity:0.4; cursor:default; }
+  .btn-gerar-lote:hover:not(:disabled){ background:#2a1d15; }
+
+  .btn-limpar{
+    width:100%;
+    padding:8px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:transparent;
+    color:rgba(59,42,30,0.6);
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+  .btn-limpar:hover{ color:var(--jam); border-color:var(--jam); }
+
   .status{
     min-height:24px;
     font-size:13px;
@@ -198,7 +298,7 @@
     border-radius:16px;
   }
 
-  /* --- Etiqueta / tag --- */
+  /* --- Card de resultado --- */
   .tag{
     position:relative;
     background:
@@ -217,7 +317,6 @@
   }
 
   .tag::before{
-    /* furo da etiqueta */
     content:"";
     position:absolute;
     top:10px; left:50%;
@@ -289,8 +388,19 @@
     margin-top:-2px;
   }
 
-  .btn-pdf{
-    width:100%;
+  .add-row{
+    display:flex;
+    gap:8px;
+  }
+
+  .add-row input[type="number"]{
+    width:56px;
+    flex:none;
+    text-align:center;
+  }
+
+  .btn-add{
+    flex:1;
     padding:10px;
     border-radius:8px;
     border:1px solid var(--cocoa);
@@ -302,7 +412,8 @@
     cursor:pointer;
     transition:background .15s ease, color .15s ease;
   }
-  .btn-pdf:hover{ background:var(--cocoa); color:var(--cream); }
+  .btn-add:hover{ background:var(--cocoa); color:var(--cream); }
+  .btn-add.added{ background:#3E6B33; border-color:#3E6B33; color:var(--cream); }
 
   footer{
     margin-top:60px;
@@ -319,7 +430,7 @@
         <span class="eyebrow">Matriz · Preços ativos</span>
         <h1>Etiquetas Biscoitê</h1>
       </div>
-      <div class="sub">Busque por SKU ou nome e gere a etiqueta pronta pra impressão</div>
+      <div class="sub">Busque, adicione à lista e gere um PDF com todas as etiquetas de uma vez</div>
     </header>
 
     <div class="layout">
@@ -344,12 +455,20 @@
         <div class="hint">
           A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong> por padrão.
         </div>
+
+        <div class="cart">
+          <h2>Lista de impressão</h2>
+          <div id="cartItems"></div>
+          <div class="cart-total" id="cartTotal"></div>
+          <button class="btn-gerar-lote" id="btnGerarLote" disabled>Gerar PDF em lote</button>
+          <button class="btn-limpar" id="btnLimpar">Limpar lista</button>
+        </div>
       </div>
 
       <div>
         <div class="status" id="status"></div>
         <div class="results" id="results">
-          <div class="empty">Faça uma busca para ver as etiquetas aqui.</div>
+          <div class="empty">Faça uma busca para ver os produtos aqui.</div>
         </div>
       </div>
     </div>
@@ -367,8 +486,14 @@
   const btnBuscar = document.getElementById('btnBuscar');
   const statusEl = document.getElementById('status');
   const resultsEl = document.getElementById('results');
+  const cartItemsEl = document.getElementById('cartItems');
+  const cartTotalEl = document.getElementById('cartTotal');
+  const btnGerarLote = document.getElementById('btnGerarLote');
+  const btnLimpar = document.getElementById('btnLimpar');
 
   let tipoBusca = 'nome';
+  // carrinho: { sku: { sku, nome, preco (numero cru), qtd } }
+  let carrinho = {};
 
   btnNome.addEventListener('click', () => {
     tipoBusca = 'nome';
@@ -390,6 +515,11 @@
     if (e.key === 'Enter') buscar();
   });
   btnBuscar.addEventListener('click', buscar);
+  btnLimpar.addEventListener('click', () => {
+    carrinho = {};
+    renderCarrinho();
+  });
+  btnGerarLote.addEventListener('click', gerarPDFLote);
 
   function formatarPreco(valor){
     const num = Number(valor);
@@ -470,78 +600,152 @@
           <span class="status-badge ${statusClasse(status)}" style="margin-left:auto">${status || '—'}</span>
         </div>
         <div class="preco">${formatarPreco(preco)}<small>${tabela}</small></div>
-        <button class="btn-pdf">Gerar etiqueta PDF</button>
+        <div class="add-row">
+          <input type="number" min="1" value="1" class="qtd-input">
+          <button class="btn-add">Adicionar à lista</button>
+        </div>
       `;
 
-      card.querySelector('.btn-pdf').addEventListener('click', () => {
-        gerarPDF({ nome, sku, preco: formatarPreco(preco), tabela });
+      const btnAdd = card.querySelector('.btn-add');
+      const qtdInput = card.querySelector('.qtd-input');
+
+      btnAdd.addEventListener('click', () => {
+        const qtd = Math.max(1, parseInt(qtdInput.value, 10) || 1);
+        adicionarAoCarrinho({ sku, nome, preco: Number(preco) || 0 }, qtd);
+        btnAdd.textContent = 'Adicionado ✓';
+        btnAdd.classList.add('added');
+        setTimeout(() => {
+          btnAdd.textContent = 'Adicionar à lista';
+          btnAdd.classList.remove('added');
+        }, 1200);
       });
 
       resultsEl.appendChild(card);
     });
   }
 
-  function gerarPDF({ nome, sku, preco, tabela }){
-    // Etiqueta 100mm x 60mm, pronta pra impressão
-    const doc = new jsPDF('l', 'mm', [100, 60]);
-    console.log('Tamanho real da página:', doc.internal.pageSize.getWidth(), 'x', doc.internal.pageSize.getHeight());
+  function adicionarAoCarrinho(produto, qtd){
+    const chave = produto.sku;
+    if (carrinho[chave]){
+      carrinho[chave].qtd += qtd;
+    } else {
+      carrinho[chave] = { ...produto, qtd };
+    }
+    renderCarrinho();
+  }
+
+  function renderCarrinho(){
+    const itens = Object.values(carrinho);
+
+    if (!itens.length){
+      cartItemsEl.innerHTML = '<div class="cart-empty">Nenhum produto na lista ainda.</div>';
+      cartTotalEl.textContent = '';
+      btnGerarLote.disabled = true;
+      btnGerarLote.textContent = 'Gerar PDF em lote';
+      return;
+    }
+
+    cartItemsEl.innerHTML = '';
+    itens.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'cart-item';
+      row.innerHTML = `
+        <div class="info">
+          <div class="nome">${item.nome}</div>
+          <div class="preco">${formatarPreco(item.preco)} · SKU ${item.sku}</div>
+        </div>
+        <input type="number" min="1" value="${item.qtd}" data-sku="${item.sku}">
+        <button class="remove" data-sku="${item.sku}">✕</button>
+      `;
+
+      row.querySelector('input').addEventListener('change', (e) => {
+        const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+        carrinho[item.sku].qtd = val;
+        renderCarrinho();
+      });
+
+      row.querySelector('.remove').addEventListener('click', () => {
+        delete carrinho[item.sku];
+        renderCarrinho();
+      });
+
+      cartItemsEl.appendChild(row);
+    });
+
+    const totalEtiquetas = itens.reduce((acc, i) => acc + i.qtd, 0);
+    cartTotalEl.textContent = `${itens.length} produto(s) · ${totalEtiquetas} etiqueta(s) no total`;
+    btnGerarLote.disabled = false;
+    btnGerarLote.textContent = `Gerar PDF em lote (${totalEtiquetas})`;
+  }
+
+  function gerarPDFLote(){
+    const itens = Object.values(carrinho);
+    if (!itens.length) return;
+
+    // achata a lista: cada produto repetido conforme a quantidade escolhida
+    const celulas = [];
+    itens.forEach(item => {
+      for (let i = 0; i < item.qtd; i++){
+        celulas.push({ nome: item.nome, preco: formatarPreco(item.preco) });
+      }
+    });
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 8;
+    const columns = 3;
+    const cellWidth = (pageWidth - margin * 2) / columns;
+    const cellHeight = 25;
+    const rowsPerPage = Math.floor((pageHeight - margin * 2) / cellHeight);
+    const cellsPerPage = columns * rowsPerPage;
 
     const cocoa = '#3B2A1E';
     const jam = '#A9382B';
-    const gold = '#C98A2C';
+    const gridColor = '#B9B2A6';
 
-    // fundo
-    doc.setFillColor('#FBF6EF');
-    doc.rect(0, 0, 100, 60, 'F');
+    celulas.forEach((cel, idx) => {
+      const posNaPagina = idx % cellsPerPage;
+      if (idx > 0 && posNaPagina === 0) doc.addPage();
 
-    // borda tracejada
-    doc.setDrawColor(gold);
-    doc.setLineWidth(0.4);
-    doc.setLineDashPattern([1.5, 1.5], 0);
-    doc.roundedRect(3, 3, 94, 54, 4, 4, 'S');
-    doc.setLineDashPattern([], 0);
+      const col = posNaPagina % columns;
+      const row = Math.floor(posNaPagina / columns);
 
-    // furo
-    doc.setFillColor('#FBF6EF');
-    doc.setDrawColor(cocoa);
-    doc.setLineWidth(0.3);
-    doc.circle(50, 9, 2.2, 'FD');
+      const x = margin + col * cellWidth;
+      const y = margin + row * cellHeight;
 
-    // nome do produto
-    doc.setTextColor(cocoa);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    const nomeLinhas = doc.splitTextToSize(nome, 84);
-    doc.text(nomeLinhas, 50, 22, { align: 'center' });
+      // linhas tracejadas da grade (direita e embaixo da célula)
+      doc.setDrawColor(gridColor);
+      doc.setLineWidth(0.2);
+      doc.setLineDashPattern([1, 1], 0);
+      if (col < columns - 1){
+        doc.line(x + cellWidth, y, x + cellWidth, y + cellHeight);
+      }
+      doc.line(x, y + cellHeight, x + cellWidth, y + cellHeight);
+      doc.setLineDashPattern([], 0);
 
-    // sku
-    doc.setFont('courier', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor('#7A5F45');
-    doc.text(`SKU ${sku}`, 50, 22 + nomeLinhas.length * 5 + 4, { align: 'center' });
+      // nome do produto
+      doc.setTextColor(cocoa);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      const nomeLinhas = doc.splitTextToSize(cel.nome.toUpperCase(), cellWidth - 6);
+      const nomeLinhasLimitadas = nomeLinhas.slice(0, 2);
+      const centroX = x + cellWidth / 2;
+      const inicioTextoY = y + 9 - (nomeLinhasLimitadas.length - 1) * 2;
+      doc.text(nomeLinhasLimitadas, centroX, inicioTextoY, { align: 'center' });
 
-    // linha tracejada separadora
-    doc.setDrawColor(gold);
-    doc.setLineWidth(0.3);
-    doc.setLineDashPattern([1, 1], 0);
-    doc.line(12, 40, 88, 40);
-    doc.setLineDashPattern([], 0);
+      // preço
+      doc.setTextColor(jam);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text(cel.preco, centroX, y + cellHeight - 7, { align: 'center' });
+    });
 
-    // preço
-    doc.setTextColor(jam);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.text(preco, 50, 51, { align: 'center' });
-
-    // tabela de preço
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor('#7A5F45');
-    doc.text(tabela.toUpperCase(), 50, 57, { align: 'center' });
-
-    const nomeArquivo = `etiqueta_${sku}`.replace(/[^a-z0-9_-]/gi, '_') + '.pdf';
-    doc.save(nomeArquivo);
+    doc.save('etiquetas_biscoite.pdf');
   }
+
+  renderCarrinho();
 </script>
 </body>
 </html>

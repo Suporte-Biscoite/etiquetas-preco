@@ -855,18 +855,25 @@
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
+    // --- Configurações de layout replicadas do sistema de referência ---
     const pageWidth = 210;
     const pageHeight = 297;
-    const margin = 8;
-    const columns = 3;
-    const cellWidth = (pageWidth - margin * 2) / columns;
-    const cellHeight = 25;
-    const rowsPerPage = Math.floor((pageHeight - margin * 2) / cellHeight);
+    const marginTop = 10;
+    const marginBottom = 10;
+    const marginLeft = 15;
+    const marginRight = 15;
+    const columns = 4;
+    const cellWidth = (pageWidth - marginLeft - marginRight) / columns;
+    const cellHeight = 26;
+    const rowGap = 5; // espaço entre linhas, igual ao row-gap do CSS original
+
+    const usableHeight = pageHeight - marginTop - marginBottom;
+    const rowsPerPage = Math.floor((usableHeight + rowGap) / (cellHeight + rowGap));
     const cellsPerPage = columns * rowsPerPage;
 
-    const cocoa = '#3B2A1E';
-    const jam = '#A9382B';
-    const gridColor = '#B9B2A6';
+    const textColor = '#000000';   // cor preta, igual ao original
+    const bottomBorderColor = '#000000'; // borda inferior tracejada preta
+    const rightBorderColor = '#cccccc';  // borda direita tracejada cinza claro
 
     celulas.forEach((cel, idx) => {
       const posNaPagina = idx % cellsPerPage;
@@ -875,34 +882,39 @@
       const col = posNaPagina % columns;
       const row = Math.floor(posNaPagina / columns);
 
-      const x = margin + col * cellWidth;
-      const y = margin + row * cellHeight;
+      const x = marginLeft + col * cellWidth;
+      const y = marginTop + row * (cellHeight + rowGap);
 
       // linhas tracejadas da grade (direita e embaixo da célula)
-      doc.setDrawColor(gridColor);
       doc.setLineWidth(0.2);
       doc.setLineDashPattern([1, 1], 0);
       if (col < columns - 1){
+        doc.setDrawColor(rightBorderColor);
         doc.line(x + cellWidth, y, x + cellWidth, y + cellHeight);
       }
+      doc.setDrawColor(bottomBorderColor);
       doc.line(x, y + cellHeight, x + cellWidth, y + cellHeight);
       doc.setLineDashPattern([], 0);
 
-      // nome do produto
-      doc.setTextColor(cocoa);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      const nomeLinhas = doc.splitTextToSize(cel.nome.toUpperCase(), cellWidth - 6);
-      const nomeLinhasLimitadas = nomeLinhas.slice(0, 2);
       const centroX = x + cellWidth / 2;
-      const inicioTextoY = y + 9 - (nomeLinhasLimitadas.length - 1) * 2;
+      const maxTextWidth = cellWidth * 0.95; // max-width: 95%, igual ao original
+
+      // nome do produto — fonte Times New Roman, 10pt, negrito, uppercase
+      doc.setTextColor(textColor);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(10);
+      const nomeLinhas = doc.splitTextToSize(cel.nome.toUpperCase(), maxTextWidth);
+      const nomeLinhasLimitadas = nomeLinhas.slice(0, 2);
+      const inicioTextoY = y + 10 - (nomeLinhasLimitadas.length - 1) * 2;
       doc.text(nomeLinhasLimitadas, centroX, inicioTextoY, { align: 'center' });
 
-      // preço
-      doc.setTextColor(cocoa);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(15);
+      // preço — fonte Times New Roman, 22pt, negrito, leve aproximação de letter-spacing
+      doc.setTextColor(textColor);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(22);
+      doc.setCharSpace(-0.1); // aproxima o letter-spacing: -0.5px do CSS original
       doc.text(cel.preco, centroX, y + cellHeight - 7, { align: 'center' });
+      doc.setCharSpace(0);
     });
 
     doc.save('etiquetas_biscoite.pdf');

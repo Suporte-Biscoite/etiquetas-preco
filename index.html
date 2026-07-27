@@ -474,6 +474,131 @@
     font-size:11px;
     color:rgba(59,42,30,0.4);
   }
+
+  /* --- Criação manual de etiqueta --- */
+  .btn-manual{
+    width:100%;
+    padding:10px;
+    margin-top:8px;
+    border:1px dashed var(--gold);
+    border-radius:9px;
+    background:transparent;
+    color:var(--cocoa);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .btn-manual:hover{ background:var(--cream); border-color:var(--jam); color:var(--jam); }
+
+  .btn-manual-fallback{
+    margin-top:14px;
+    padding:9px 16px;
+    border:1px dashed var(--gold);
+    border-radius:9px;
+    background:transparent;
+    color:var(--cocoa);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+  .btn-manual-fallback:hover{ border-color:var(--jam); color:var(--jam); }
+
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(59,42,30,0.45);
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    padding:16px;
+  }
+  .modal-overlay.open{ display:flex; }
+
+  .modal{
+    background:var(--cream);
+    border-radius:16px;
+    border:1px solid var(--line);
+    max-width:380px;
+    width:100%;
+    padding:22px;
+    box-shadow:0 20px 50px -20px rgba(59,42,30,0.5);
+  }
+
+  .modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .modal-header h2{
+    font-family:'Fraunces', serif;
+    font-size:18px;
+    font-weight:600;
+    margin:0;
+  }
+  .modal-close{
+    background:none;
+    border:none;
+    font-size:16px;
+    color:rgba(59,42,30,0.5);
+    cursor:pointer;
+    line-height:1;
+  }
+  .modal-close:hover{ color:var(--jam); }
+
+  .modal-body .field:last-child{ margin-bottom:0; }
+
+  .aviso-preco{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:#a6720a;
+    margin-top:6px;
+  }
+
+  .qtd-control{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .qtd-control input{ text-align:center; flex:1; }
+  .qtd-btn{
+    width:36px;
+    height:36px;
+    flex:none;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--cream-2);
+    color:var(--cocoa);
+    font-size:16px;
+    cursor:pointer;
+  }
+  .qtd-btn:hover{ background:var(--kraft); color:var(--cream); }
+
+  .modal-footer{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+  }
+  .btn-cancel, .btn-confirm{
+    flex:1;
+    padding:11px;
+    border-radius:9px;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    border:1px solid var(--line);
+  }
+  .btn-cancel{ background:transparent; color:rgba(59,42,30,0.7); }
+  .btn-cancel:hover{ border-color:var(--jam); color:var(--jam); }
+  .btn-confirm{ background:var(--jam); border-color:var(--jam); color:var(--cream); }
+  .btn-confirm:hover{ background:#8f2f24; }
 </style>
 </head>
 <body>
@@ -520,6 +645,8 @@
 
         <button class="btn-search" id="btnBuscar">Buscar preço</button>
 
+        <button type="button" class="btn-manual" id="btnManual">✎ Criar etiqueta manual</button>
+
         <div class="hint" id="hintTabela">
           A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong>.
         </div>
@@ -545,6 +672,38 @@
     <footer>Fonte: Metabase — Relatório de Preços Ativos (pergunta 9294)</footer>
   </div>
 
+  <div class="modal-overlay" id="modalManual">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Criar etiqueta manual</h2>
+        <button type="button" class="modal-close" id="btnManualFechar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label>Nome do produto</label>
+          <input type="text" id="inputManualNome" placeholder="Ex: LIMONE 100G" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Preço (R$)</label>
+          <input type="text" id="inputManualPreco" inputmode="numeric" placeholder="0,00">
+          <div class="aviso-preco" id="avisoPrecoBaixo" style="display:none">⚠ Preço baixo ou zerado — confira antes de imprimir.</div>
+        </div>
+        <div class="field">
+          <label>Quantidade de etiquetas</label>
+          <div class="qtd-control">
+            <button type="button" class="qtd-btn" id="btnManualQtdMenos">−</button>
+            <input type="number" id="inputManualQtd" min="1" value="1">
+            <button type="button" class="qtd-btn" id="btnManualQtdMais">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" id="btnManualCancelar">Cancelar</button>
+        <button type="button" class="btn-confirm" id="btnManualConfirmar">Adicionar à lista</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   const { jsPDF } = window.jspdf;
 
@@ -559,6 +718,21 @@
   const cartTotalEl = document.getElementById('cartTotal');
   const btnGerarLote = document.getElementById('btnGerarLote');
   const btnLimpar = document.getElementById('btnLimpar');
+
+  // --- Elementos do modal de criação manual ---
+  const btnManual = document.getElementById('btnManual');
+  const modalManual = document.getElementById('modalManual');
+  const btnManualFechar = document.getElementById('btnManualFechar');
+  const btnManualCancelar = document.getElementById('btnManualCancelar');
+  const btnManualConfirmar = document.getElementById('btnManualConfirmar');
+  const inputManualNome = document.getElementById('inputManualNome');
+  const inputManualPreco = document.getElementById('inputManualPreco');
+  const inputManualQtd = document.getElementById('inputManualQtd');
+  const avisoPrecoBaixo = document.getElementById('avisoPrecoBaixo');
+  const btnManualQtdMenos = document.getElementById('btnManualQtdMenos');
+  const btnManualQtdMais = document.getElementById('btnManualQtdMais');
+
+  let manualPrecoCentavos = 0;
 
   let tipoBusca = 'nome';
   // carrinho: { sku: { sku, nome, preco (numero cru), qtd } }
@@ -681,6 +855,82 @@
     return num.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
   }
 
+  // --- Criação manual de etiqueta (adaptado do sistema anterior) ---
+  function formatarCentavos(centavos){
+    return (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function atualizarAvisoPrecoManual(){
+    const valor = manualPrecoCentavos / 100;
+    if (valor < 2){
+      avisoPrecoBaixo.style.display = 'flex';
+      inputManualPreco.style.borderColor = '#fbbf24';
+    } else {
+      avisoPrecoBaixo.style.display = 'none';
+      inputManualPreco.style.borderColor = '';
+    }
+  }
+
+  function abrirModalManual(nomeSugerido = ''){
+    inputManualNome.value = nomeSugerido ? nomeSugerido.toUpperCase() : '';
+    inputManualNome.style.borderColor = '';
+    manualPrecoCentavos = 0;
+    inputManualPreco.value = formatarCentavos(0);
+    inputManualQtd.value = 1;
+    atualizarAvisoPrecoManual();
+    modalManual.classList.add('open');
+    inputManualNome.focus();
+  }
+
+  function fecharModalManual(){
+    modalManual.classList.remove('open');
+  }
+
+  btnManual.addEventListener('click', () => abrirModalManual());
+  btnManualFechar.addEventListener('click', fecharModalManual);
+  btnManualCancelar.addEventListener('click', fecharModalManual);
+  modalManual.addEventListener('click', (e) => {
+    if (e.target === modalManual) fecharModalManual();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalManual.classList.contains('open')) fecharModalManual();
+  });
+
+  inputManualNome.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase();
+    if (e.target.value.trim()) e.target.style.borderColor = '';
+  });
+
+  inputManualPreco.addEventListener('input', (e) => {
+    const digitos = e.target.value.replace(/\D/g, '');
+    manualPrecoCentavos = Number(digitos || '0');
+    e.target.value = formatarCentavos(manualPrecoCentavos);
+    atualizarAvisoPrecoManual();
+  });
+
+  btnManualQtdMenos.addEventListener('click', () => {
+    inputManualQtd.value = Math.max(1, (parseInt(inputManualQtd.value, 10) || 1) - 1);
+  });
+  btnManualQtdMais.addEventListener('click', () => {
+    inputManualQtd.value = (parseInt(inputManualQtd.value, 10) || 1) + 1;
+  });
+
+  btnManualConfirmar.addEventListener('click', () => {
+    const nome = inputManualNome.value.trim();
+    if (!nome){
+      inputManualNome.style.borderColor = 'var(--jam)';
+      inputManualNome.focus();
+      return;
+    }
+
+    const qtd = Math.max(1, parseInt(inputManualQtd.value, 10) || 1);
+    const preco = manualPrecoCentavos / 100;
+    const skuManual = `MANUAL-${Date.now()}`;
+
+    adicionarAoCarrinho({ sku: skuManual, nome, preco }, qtd);
+    fecharModalManual();
+  });
+
   function statusClasse(status){
     if (!status) return 'status-outro';
     const s = status.toLowerCase();
@@ -719,7 +969,18 @@
         }
         statusEl.textContent = data.error || 'Erro ao buscar.';
         statusEl.className = 'status error';
-        resultsEl.innerHTML = '<div class="empty">Nada encontrado.</div>';
+        if (resp.status === 401 && lojaAtual === 'aeroporto'){
+          resultsEl.innerHTML = '<div class="empty">Nada encontrado.</div>';
+        } else {
+          resultsEl.innerHTML = `
+            <div class="empty">
+              Nada encontrado.<br>
+              <button type="button" class="btn-manual-fallback" id="btnManualFallback">✎ Cadastrar etiqueta manualmente</button>
+            </div>
+          `;
+          const nomeSugerido = tipoBusca === 'nome' ? valor : '';
+          document.getElementById('btnManualFallback').addEventListener('click', () => abrirModalManual(nomeSugerido));
+        }
         return;
       }
 
@@ -730,7 +991,14 @@
       statusEl.className = 'status';
 
       if (!produtos.length){
-        resultsEl.innerHTML = '<div class="empty">Nenhum produto encontrado.<br>Tente outro termo ou confira o SKU.</div>';
+        resultsEl.innerHTML = `
+          <div class="empty">
+            Nenhum produto encontrado.<br>Tente outro termo ou confira o SKU.<br>
+            <button type="button" class="btn-manual-fallback" id="btnManualFallback">✎ Cadastrar etiqueta manualmente</button>
+          </div>
+        `;
+        const nomeSugerido = tipoBusca === 'nome' ? valor : '';
+        document.getElementById('btnManualFallback').addEventListener('click', () => abrirModalManual(nomeSugerido));
         return;
       }
 
@@ -855,18 +1123,25 @@
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
+    // --- Configurações de layout replicadas do sistema de referência ---
     const pageWidth = 210;
     const pageHeight = 297;
-    const margin = 8;
-    const columns = 3;
-    const cellWidth = (pageWidth - margin * 2) / columns;
-    const cellHeight = 25;
-    const rowsPerPage = Math.floor((pageHeight - margin * 2) / cellHeight);
+    const marginTop = 10;
+    const marginBottom = 10;
+    const marginLeft = 15;
+    const marginRight = 15;
+    const columns = 4;
+    const cellWidth = (pageWidth - marginLeft - marginRight) / columns;
+    const cellHeight = 26;
+    const rowGap = 5; // espaço entre linhas, igual ao row-gap do CSS original
+
+    const usableHeight = pageHeight - marginTop - marginBottom;
+    const rowsPerPage = Math.floor((usableHeight + rowGap) / (cellHeight + rowGap));
     const cellsPerPage = columns * rowsPerPage;
 
-    const cocoa = '#3B2A1E';
-    const jam = '#A9382B';
-    const gridColor = '#B9B2A6';
+    const textColor = '#000000';   // cor preta, igual ao original
+    const bottomBorderColor = '#000000'; // borda inferior tracejada preta
+    const rightBorderColor = '#cccccc';  // borda direita tracejada cinza claro
 
     celulas.forEach((cel, idx) => {
       const posNaPagina = idx % cellsPerPage;
@@ -875,34 +1150,39 @@
       const col = posNaPagina % columns;
       const row = Math.floor(posNaPagina / columns);
 
-      const x = margin + col * cellWidth;
-      const y = margin + row * cellHeight;
+      const x = marginLeft + col * cellWidth;
+      const y = marginTop + row * (cellHeight + rowGap);
 
       // linhas tracejadas da grade (direita e embaixo da célula)
-      doc.setDrawColor(gridColor);
       doc.setLineWidth(0.2);
       doc.setLineDashPattern([1, 1], 0);
       if (col < columns - 1){
+        doc.setDrawColor(rightBorderColor);
         doc.line(x + cellWidth, y, x + cellWidth, y + cellHeight);
       }
+      doc.setDrawColor(bottomBorderColor);
       doc.line(x, y + cellHeight, x + cellWidth, y + cellHeight);
       doc.setLineDashPattern([], 0);
 
-      // nome do produto
-      doc.setTextColor(cocoa);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      const nomeLinhas = doc.splitTextToSize(cel.nome.toUpperCase(), cellWidth - 6);
-      const nomeLinhasLimitadas = nomeLinhas.slice(0, 2);
       const centroX = x + cellWidth / 2;
-      const inicioTextoY = y + 9 - (nomeLinhasLimitadas.length - 1) * 2;
+      const maxTextWidth = cellWidth * 0.95; // max-width: 95%, igual ao original
+
+      // nome do produto — fonte Times New Roman, 10pt, negrito, uppercase
+      doc.setTextColor(textColor);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(10);
+      const nomeLinhas = doc.splitTextToSize(cel.nome.toUpperCase(), maxTextWidth);
+      const nomeLinhasLimitadas = nomeLinhas.slice(0, 2);
+      const inicioTextoY = y + 10 - (nomeLinhasLimitadas.length - 1) * 2;
       doc.text(nomeLinhasLimitadas, centroX, inicioTextoY, { align: 'center' });
 
-      // preço
-      doc.setTextColor(cocoa);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(15);
+      // preço — fonte Times New Roman, 22pt, negrito, leve aproximação de letter-spacing
+      doc.setTextColor(textColor);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(22);
+      doc.setCharSpace(-0.1); // aproxima o letter-spacing: -0.5px do CSS original
       doc.text(cel.preco, centroX, y + cellHeight - 7, { align: 'center' });
+      doc.setCharSpace(0);
     });
 
     doc.save('etiquetas_biscoite.pdf');

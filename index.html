@@ -203,22 +203,15 @@
     outline-offset:1px;
   }
 
-  select#selectCategoria{
-    width:100%;
-    padding:11px 12px;
-    border:1px solid var(--line);
-    border-radius:8px;
+  .categoria-fixa-info{
     background:var(--cream);
-    font-family:'Inter', sans-serif;
-    font-size:14px;
-    color:var(--cocoa);
-    cursor:pointer;
+    border:1px dashed var(--gold);
+    border-radius:8px;
+    padding:11px 12px;
+    font-size:13px;
+    line-height:1.5;
+    color:rgba(59,42,30,0.8);
   }
-  select#selectCategoria:focus{
-    outline:2px solid var(--gold);
-    outline-offset:1px;
-  }
-  select#selectCategoria:disabled{ opacity:0.6; cursor:default; }
 
   .btn-search{
     width:100%;
@@ -775,16 +768,18 @@
         <div class="field">
           <label>Buscar por</label>
           <div class="toggle">
-            <button type="button" id="btnNome" class="active">Nome</button>
-            <button type="button" id="btnSku">SKU</button>
-            <button type="button" id="btnCategoria">Categoria</button>
+            <button type="button" id="btnSku" class="active">SKU</button>
+            <button type="button" id="btnCategoria">Produtos Prontos</button>
           </div>
         </div>
 
-        <div class="field">
-          <label id="lblBusca">Nome do produto</label>
-          <input type="text" id="inputBusca" placeholder="ex: biscoito amanteigado" autocomplete="off">
-          <select id="selectCategoria" style="display:none"></select>
+        <div class="field" id="campoBuscaSku">
+          <label id="lblBusca">Código SKU</label>
+          <input type="text" id="inputBusca" placeholder="ex: 1002345" autocomplete="off">
+        </div>
+
+        <div class="field" id="campoBuscaCategoria" style="display:none">
+          <div class="categoria-fixa-info">📦 Vai listar todos os produtos da categoria <strong>PRODUTOS PRONTOS</strong>.</div>
         </div>
 
         <button class="btn-search" id="btnBuscar">Buscar preço</button>
@@ -828,7 +823,7 @@
           <div class="step-icon">🔍</div>
           <div class="step-content">
             <h3>1. Busque o produto</h3>
-            <p>Escolha buscar por <strong>Nome</strong>, <strong>SKU</strong> ou <strong>Categoria</strong>, digite (ou selecione) o termo e pressione <strong>Enter</strong> ou clique em "Buscar preço".</p>
+            <p>Escolha buscar por <strong>SKU</strong> (digite o código e pressione <strong>Enter</strong>) ou clique em <strong>"Produtos Prontos"</strong> para listar de uma vez todos os produtos padrão dessa categoria.</p>
           </div>
         </div>
 
@@ -836,7 +831,7 @@
           <div class="step-icon">✔️</div>
           <div class="step-content">
             <h3>2. Adicione à lista</h3>
-            <p>Confira o <strong>Nome</strong> e o <strong>Preço</strong> de cada resultado, ajuste a quantidade e clique em <strong>"Adicionar à lista"</strong>. Numa busca por categoria, dá pra adicionar todos os produtos de uma vez.</p>
+            <p>Confira o <strong>Nome</strong> e o <strong>Preço</strong> de cada resultado, ajuste a quantidade e clique em <strong>"Adicionar à lista"</strong>. Em "Produtos Prontos", dá pra adicionar todos de uma vez.</p>
           </div>
         </div>
 
@@ -910,12 +905,12 @@
 <script>
   const { jsPDF } = window.jspdf;
 
-  const btnNome = document.getElementById('btnNome');
   const btnSku = document.getElementById('btnSku');
   const btnCategoria = document.getElementById('btnCategoria');
   const lblBusca = document.getElementById('lblBusca');
   const inputBusca = document.getElementById('inputBusca');
-  const selectCategoria = document.getElementById('selectCategoria');
+  const campoBuscaSku = document.getElementById('campoBuscaSku');
+  const campoBuscaCategoria = document.getElementById('campoBuscaCategoria');
   const btnBuscar = document.getElementById('btnBuscar');
   const statusEl = document.getElementById('status');
   const resultsEl = document.getElementById('results');
@@ -923,6 +918,10 @@
   const cartTotalEl = document.getElementById('cartTotal');
   const btnGerarLote = document.getElementById('btnGerarLote');
   const btnLimpar = document.getElementById('btnLimpar');
+
+  // Categoria fixa: "Produtos Prontos" são os produtos padrão da loja
+  // toda, então não precisa de dropdown — é sempre esse valor.
+  const CATEGORIA_FIXA = 'PRODUTOS PRONTOS';
 
   // --- Elementos do modal "Como usar o Sistema" ---
   const btnAjuda = document.getElementById('btnAjuda');
@@ -955,7 +954,7 @@
 
   let manualPrecoCentavos = 0;
 
-  let tipoBusca = 'nome';
+  let tipoBusca = 'sku';
   // carrinho: { sku: { sku, nome, preco (numero cru), qtd } }
   let carrinho = {};
 
@@ -981,7 +980,6 @@
     hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong>.';
     resultsEl.innerHTML = '<div class="empty">Faça uma busca para ver os produtos aqui.</div>';
     statusEl.textContent = '';
-    if (tipoBusca === 'categoria') carregarCategorias();
   });
 
   tabAeroporto.addEventListener('click', () => {
@@ -996,7 +994,6 @@
       loginLojaEl.style.display = 'none';
       areaBuscaEl.style.display = 'block';
       hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela — Aeroporto GRU</strong>.';
-      if (tipoBusca === 'categoria') carregarCategorias();
     } else {
       areaBuscaEl.style.display = 'none';
       loginLojaEl.style.display = 'block';
@@ -1039,7 +1036,6 @@
       loginLojaEl.style.display = 'none';
       areaBuscaEl.style.display = 'block';
       hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela — Aeroporto GRU</strong>.';
-      if (tipoBusca === 'categoria') carregarCategorias();
     } catch(err){
       erroLojaEl.textContent = 'Falha de conexão ao validar a senha.';
     } finally {
@@ -1047,92 +1043,25 @@
     }
   }
 
-  btnNome.addEventListener('click', () => {
-    tipoBusca = 'nome';
-    btnNome.classList.add('active');
-    btnSku.classList.remove('active');
-    btnCategoria.classList.remove('active');
-    lblBusca.textContent = 'Nome do produto';
-    inputBusca.placeholder = 'ex: biscoito amanteigado';
-    inputBusca.style.display = '';
-    selectCategoria.style.display = 'none';
-  });
-
   btnSku.addEventListener('click', () => {
     tipoBusca = 'sku';
     btnSku.classList.add('active');
-    btnNome.classList.remove('active');
     btnCategoria.classList.remove('active');
-    lblBusca.textContent = 'Código SKU';
-    inputBusca.placeholder = 'ex: 1002345';
-    inputBusca.style.display = '';
-    selectCategoria.style.display = 'none';
+    campoBuscaSku.style.display = '';
+    campoBuscaCategoria.style.display = 'none';
+    btnBuscar.textContent = 'Buscar preço';
   });
 
   btnCategoria.addEventListener('click', () => {
     tipoBusca = 'categoria';
     btnCategoria.classList.add('active');
-    btnNome.classList.remove('active');
     btnSku.classList.remove('active');
-    lblBusca.textContent = 'Categoria';
-    inputBusca.style.display = 'none';
-    selectCategoria.style.display = '';
-    carregarCategorias();
+    campoBuscaSku.style.display = 'none';
+    campoBuscaCategoria.style.display = '';
+    btnBuscar.textContent = 'Listar produtos prontos';
   });
-
-  async function carregarCategorias(){
-    selectCategoria.disabled = true;
-    selectCategoria.innerHTML = '';
-    const optCarregando = document.createElement('option');
-    optCarregando.value = '';
-    optCarregando.textContent = 'Carregando categorias...';
-    selectCategoria.appendChild(optCarregando);
-
-    try{
-      let url = `/api/preco?tipo=categorias&loja=${lojaAtual}`;
-      if (lojaAtual === 'aeroporto' && senhaAeroporto){
-        url += `&senha=${encodeURIComponent(senhaAeroporto)}`;
-      }
-      const resp = await fetch(url);
-      const data = await resp.json();
-
-      selectCategoria.innerHTML = '';
-
-      if (!resp.ok){
-        const optErro = document.createElement('option');
-        optErro.value = '';
-        optErro.textContent = data.error || 'Erro ao carregar categorias';
-        selectCategoria.appendChild(optErro);
-        return;
-      }
-
-      const categorias = data.categorias || [];
-      const optPlaceholder = document.createElement('option');
-      optPlaceholder.value = '';
-      optPlaceholder.textContent = categorias.length ? 'Selecione uma categoria...' : 'Nenhuma categoria encontrada';
-      selectCategoria.appendChild(optPlaceholder);
-
-      categorias.forEach((categoria) => {
-        const opt = document.createElement('option');
-        opt.value = categoria;
-        opt.textContent = categoria;
-        selectCategoria.appendChild(opt);
-      });
-    } catch(err){
-      selectCategoria.innerHTML = '';
-      const optErro = document.createElement('option');
-      optErro.value = '';
-      optErro.textContent = 'Falha de conexão ao carregar categorias';
-      selectCategoria.appendChild(optErro);
-    } finally {
-      selectCategoria.disabled = false;
-    }
-  }
 
   inputBusca.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') buscar();
-  });
-  selectCategoria.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') buscar();
   });
   btnBuscar.addEventListener('click', buscar);
@@ -1236,11 +1165,9 @@
   }
 
   async function buscar(){
-    const valor = tipoBusca === 'categoria' ? selectCategoria.value.trim() : inputBusca.value.trim();
+    const valor = tipoBusca === 'categoria' ? CATEGORIA_FIXA : inputBusca.value.trim();
     if (!valor){
-      statusEl.textContent = tipoBusca === 'categoria'
-        ? 'Selecione uma categoria antes de buscar.'
-        : 'Digite um nome ou SKU antes de buscar.';
+      statusEl.textContent = 'Digite um SKU antes de buscar.';
       statusEl.className = 'status error';
       return;
     }
@@ -1276,8 +1203,7 @@
               <button type="button" class="btn-manual-fallback" id="btnManualFallback">✎ Cadastrar etiqueta manualmente</button>
             </div>
           `;
-          const nomeSugerido = tipoBusca === 'nome' ? valor : '';
-          document.getElementById('btnManualFallback').addEventListener('click', () => abrirModalManual(nomeSugerido));
+          document.getElementById('btnManualFallback').addEventListener('click', () => abrirModalManual());
         }
         return;
       }
@@ -1295,8 +1221,7 @@
             <button type="button" class="btn-manual-fallback" id="btnManualFallback">✎ Cadastrar etiqueta manualmente</button>
           </div>
         `;
-        const nomeSugerido = tipoBusca === 'nome' ? valor : '';
-        document.getElementById('btnManualFallback').addEventListener('click', () => abrirModalManual(nomeSugerido));
+        document.getElementById('btnManualFallback').addEventListener('click', () => abrirModalManual());
         return;
       }
 

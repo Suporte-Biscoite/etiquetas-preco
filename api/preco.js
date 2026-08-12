@@ -102,6 +102,10 @@ export default async function handler(req, res) {
       target: ["dimension", ["template-tag", "sku"]],
       value: [valor.trim()],
     });
+  } else if (tipo === "categoria") {
+    // Categoria não tem template-tag própria no card do Metabase, então
+    // buscamos todos os itens da tabela de preço (só com o filtro de
+    // tabela_preco) e filtramos por categoria aqui no backend.
   } else {
     parameters.push({
       type: "string/contains",
@@ -144,9 +148,19 @@ export default async function handler(req, res) {
 
     // Só mostramos SKUs com status "Ativo" — o relatório também traz
     // Rascunho/Inativo/Descontinuado, que não devem virar etiqueta.
-    const produtos = produtosBrutos.filter(
+    let produtos = produtosBrutos.filter(
       (p) => (p["Status"] || "").trim().toLowerCase() === "ativo"
     );
+
+    // Busca por categoria: filtra pelo texto digitado (contém, sem
+    // diferenciar maiúsculas/minúsculas), já que não filtramos isso
+    // direto no Metabase.
+    if (tipo === "categoria") {
+      const termo = valor.trim().toLowerCase();
+      produtos = produtos.filter((p) =>
+        (p["Categoria"] || "").toLowerCase().includes(termo)
+      );
+    }
 
     return res.status(200).json({ produtos, total: produtos.length });
   } catch (err) {

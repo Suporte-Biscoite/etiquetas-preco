@@ -57,8 +57,8 @@ export default async function handler(req, res) {
   const { tipo, valor, tabela, loja, senha } = req.query;
   const lojaAtual = loja === "aeroporto" ? "aeroporto" : "padrao";
 
-  if (!valor || !valor.trim()) {
-    return res.status(400).json({ error: "Informe um SKU ou nome de produto para buscar." });
+  if (tipo !== "categorias" && (!valor || !valor.trim())) {
+    return res.status(400).json({ error: "Informe um SKU, nome de produto ou categoria para buscar." });
   }
 
   // A loja Aeroporto exige senha — validada aqui no backend também (não só
@@ -102,10 +102,10 @@ export default async function handler(req, res) {
       target: ["dimension", ["template-tag", "sku"]],
       value: [valor.trim()],
     });
-  } else if (tipo === "categoria") {
-    // Categoria não tem template-tag própria no card do Metabase, então
-    // buscamos todos os itens da tabela de preço (só com o filtro de
-    // tabela_preco) e filtramos por categoria aqui no backend.
+  } else if (tipo === "categoria" || tipo === "categorias") {
+    // "categoria": filtra produtos de uma categoria específica (texto digitado/selecionado).
+    // "categorias": lista as categorias distintas da tabela — nenhum filtro extra aqui,
+    // pegamos a tabela inteira e resolvemos os dois casos depois de aplicar o filtro de Ativo.
   } else {
     parameters.push({
       type: "string/contains",
@@ -152,14 +152,22 @@ export default async function handler(req, res) {
       (p) => (p["Status"] || "").trim().toLowerCase() === "ativo"
     );
 
-    // Busca por categoria: filtra pelo texto digitado (contém, sem
-    // diferenciar maiúsculas/minúsculas), já que não filtramos isso
+    // Busca por categoria: filtra pelo texto digitado/selecionado (contém,
+    // sem diferenciar maiúsculas/minúsculas), já que não filtramos isso
     // direto no Metabase.
     if (tipo === "categoria") {
       const termo = valor.trim().toLowerCase();
       produtos = produtos.filter((p) =>
         (p["Categoria"] || "").toLowerCase().includes(termo)
       );
+    }
+
+    // Lista de categorias distintas, pra popular o dropdown no front-end.
+    if (tipo === "categorias") {
+      const categorias = [...new Set(
+        produtos.map((p) => (p["Categoria"] || "").trim()).filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b, "pt-BR"));
+      return res.status(200).json({ categorias });
     }
 
     return res.status(200).json({ produtos, total: produtos.length });

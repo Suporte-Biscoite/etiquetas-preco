@@ -203,6 +203,23 @@
     outline-offset:1px;
   }
 
+  select#selectCategoria{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--cream);
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    color:var(--cocoa);
+    cursor:pointer;
+  }
+  select#selectCategoria:focus{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+  select#selectCategoria:disabled{ opacity:0.6; cursor:default; }
+
   .btn-search{
     width:100%;
     padding:12px;
@@ -629,6 +646,98 @@
   }
   .btn-add-todos:hover{ background:#8f2f24; }
   .btn-add-todos.added{ background:#3E6B33; }
+
+  /* --- Link e modal "Como usar o Sistema" --- */
+  .link-ajuda{
+    background:none;
+    border:none;
+    color:var(--jam);
+    font-family:'Inter', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    text-decoration:underline;
+    cursor:pointer;
+    padding:0;
+    margin-top:6px;
+  }
+  .link-ajuda:hover{ color:#8f2f24; }
+
+  .help-modal{ max-width:460px; }
+
+  .help-body{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  .help-step{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+  }
+
+  .step-icon{
+    flex:none;
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:var(--cream-2);
+    border:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+  }
+
+  .step-content h3{
+    font-family:'Fraunces', serif;
+    font-size:14.5px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+
+  .step-content p{
+    font-size:13px;
+    line-height:1.5;
+    margin:0;
+    color:rgba(59,42,30,0.75);
+  }
+
+  .help-divider{
+    border-top:1px dashed var(--line);
+    margin:2px 0;
+  }
+
+  .help-tips h4{
+    font-family:'Fraunces', serif;
+    font-size:14px;
+    font-weight:600;
+    margin:0 0 12px;
+  }
+
+  .help-tips ul{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+  }
+
+  .help-tips li{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    font-size:12.5px;
+    line-height:1.5;
+    color:rgba(59,42,30,0.8);
+  }
+
+  .tip-icon{
+    flex:none;
+    font-size:14px;
+    line-height:1.4;
+  }
 </style>
 </head>
 <body>
@@ -638,7 +747,10 @@
         <span class="eyebrow">Matriz · Preços ativos</span>
         <h1>Etiquetas Biscoitê</h1>
       </div>
-      <div class="sub">Busque, adicione à lista e gere um PDF com todas as etiquetas de uma vez</div>
+      <div class="sub">
+        Busque, adicione à lista e gere um PDF com todas as etiquetas de uma vez<br>
+        <button type="button" class="link-ajuda" id="btnAjuda">🎓 Como usar o sistema?</button>
+      </div>
     </header>
 
     <div class="layout">
@@ -672,6 +784,7 @@
         <div class="field">
           <label id="lblBusca">Nome do produto</label>
           <input type="text" id="inputBusca" placeholder="ex: biscoito amanteigado" autocomplete="off">
+          <select id="selectCategoria" style="display:none"></select>
         </div>
 
         <button class="btn-search" id="btnBuscar">Buscar preço</button>
@@ -701,6 +814,65 @@
     </div>
 
     <footer>Fonte: Metabase — Relatório de Preços Ativos (pergunta 9294)</footer>
+  </div>
+
+  <div class="modal-overlay" id="modalAjuda">
+    <div class="modal help-modal">
+      <div class="modal-header">
+        <h2>🎓 Como usar o Sistema</h2>
+        <button type="button" class="modal-close" id="btnAjudaFechar">✕</button>
+      </div>
+
+      <div class="help-body">
+        <div class="help-step">
+          <div class="step-icon">🔍</div>
+          <div class="step-content">
+            <h3>1. Busque o produto</h3>
+            <p>Escolha buscar por <strong>Nome</strong>, <strong>SKU</strong> ou <strong>Categoria</strong>, digite (ou selecione) o termo e pressione <strong>Enter</strong> ou clique em "Buscar preço".</p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-icon">✔️</div>
+          <div class="step-content">
+            <h3>2. Adicione à lista</h3>
+            <p>Confira o <strong>Nome</strong> e o <strong>Preço</strong> de cada resultado, ajuste a quantidade e clique em <strong>"Adicionar à lista"</strong>. Numa busca por categoria, dá pra adicionar todos os produtos de uma vez.</p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-icon">🖨️</div>
+          <div class="step-content">
+            <h3>3. Gere o PDF</h3>
+            <p>Vá montando sua lista de impressão. Quando terminar, clique em <strong>"Gerar PDF em lote"</strong> para baixar todas as etiquetas de uma vez.</p>
+          </div>
+        </div>
+
+        <div class="help-divider"></div>
+
+        <div class="help-tips">
+          <h4>💡 Dicas rápidas:</h4>
+          <ul>
+            <li>
+              <span class="tip-icon">✎</span>
+              <div><strong>Não achou o produto?</strong> Clique em "Criar etiqueta manual" para digitar o nome, o preço e a quantidade você mesmo.</div>
+            </li>
+            <li>
+              <span class="tip-icon">🔢</span>
+              <div><strong>Errou a quantidade?</strong> Ajuste direto no campo numérico de cada item, tanto nos resultados da busca quanto na lista de impressão.</div>
+            </li>
+            <li>
+              <span class="tip-icon">🔒</span>
+              <div><strong>Loja Aeroporto GRU?</strong> Clique na aba "Aeroporto GRU" no topo e digite a senha da loja para acessar aquela tabela de preço.</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-confirm" id="btnAjudaEntendi" style="width:100%">Entendi, vamos lá!</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal-overlay" id="modalManual">
@@ -743,6 +915,7 @@
   const btnCategoria = document.getElementById('btnCategoria');
   const lblBusca = document.getElementById('lblBusca');
   const inputBusca = document.getElementById('inputBusca');
+  const selectCategoria = document.getElementById('selectCategoria');
   const btnBuscar = document.getElementById('btnBuscar');
   const statusEl = document.getElementById('status');
   const resultsEl = document.getElementById('results');
@@ -750,6 +923,22 @@
   const cartTotalEl = document.getElementById('cartTotal');
   const btnGerarLote = document.getElementById('btnGerarLote');
   const btnLimpar = document.getElementById('btnLimpar');
+
+  // --- Elementos do modal "Como usar o Sistema" ---
+  const btnAjuda = document.getElementById('btnAjuda');
+  const modalAjuda = document.getElementById('modalAjuda');
+  const btnAjudaFechar = document.getElementById('btnAjudaFechar');
+  const btnAjudaEntendi = document.getElementById('btnAjudaEntendi');
+
+  function abrirModalAjuda(){ modalAjuda.classList.add('open'); }
+  function fecharModalAjuda(){ modalAjuda.classList.remove('open'); }
+
+  btnAjuda.addEventListener('click', abrirModalAjuda);
+  btnAjudaFechar.addEventListener('click', fecharModalAjuda);
+  btnAjudaEntendi.addEventListener('click', fecharModalAjuda);
+  modalAjuda.addEventListener('click', (e) => {
+    if (e.target === modalAjuda) fecharModalAjuda();
+  });
 
   // --- Elementos do modal de criação manual ---
   const btnManual = document.getElementById('btnManual');
@@ -792,6 +981,7 @@
     hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela 1 — Próprias e Franquias Padrão</strong>.';
     resultsEl.innerHTML = '<div class="empty">Faça uma busca para ver os produtos aqui.</div>';
     statusEl.textContent = '';
+    if (tipoBusca === 'categoria') carregarCategorias();
   });
 
   tabAeroporto.addEventListener('click', () => {
@@ -806,6 +996,7 @@
       loginLojaEl.style.display = 'none';
       areaBuscaEl.style.display = 'block';
       hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela — Aeroporto GRU</strong>.';
+      if (tipoBusca === 'categoria') carregarCategorias();
     } else {
       areaBuscaEl.style.display = 'none';
       loginLojaEl.style.display = 'block';
@@ -848,6 +1039,7 @@
       loginLojaEl.style.display = 'none';
       areaBuscaEl.style.display = 'block';
       hintTabelaEl.innerHTML = 'A busca considera a <strong>Tabela — Aeroporto GRU</strong>.';
+      if (tipoBusca === 'categoria') carregarCategorias();
     } catch(err){
       erroLojaEl.textContent = 'Falha de conexão ao validar a senha.';
     } finally {
@@ -862,6 +1054,8 @@
     btnCategoria.classList.remove('active');
     lblBusca.textContent = 'Nome do produto';
     inputBusca.placeholder = 'ex: biscoito amanteigado';
+    inputBusca.style.display = '';
+    selectCategoria.style.display = 'none';
   });
 
   btnSku.addEventListener('click', () => {
@@ -871,6 +1065,8 @@
     btnCategoria.classList.remove('active');
     lblBusca.textContent = 'Código SKU';
     inputBusca.placeholder = 'ex: 1002345';
+    inputBusca.style.display = '';
+    selectCategoria.style.display = 'none';
   });
 
   btnCategoria.addEventListener('click', () => {
@@ -879,10 +1075,64 @@
     btnNome.classList.remove('active');
     btnSku.classList.remove('active');
     lblBusca.textContent = 'Categoria';
-    inputBusca.placeholder = 'ex: biscoitos amanteigados';
+    inputBusca.style.display = 'none';
+    selectCategoria.style.display = '';
+    carregarCategorias();
   });
 
+  async function carregarCategorias(){
+    selectCategoria.disabled = true;
+    selectCategoria.innerHTML = '';
+    const optCarregando = document.createElement('option');
+    optCarregando.value = '';
+    optCarregando.textContent = 'Carregando categorias...';
+    selectCategoria.appendChild(optCarregando);
+
+    try{
+      let url = `/api/preco?tipo=categorias&loja=${lojaAtual}`;
+      if (lojaAtual === 'aeroporto' && senhaAeroporto){
+        url += `&senha=${encodeURIComponent(senhaAeroporto)}`;
+      }
+      const resp = await fetch(url);
+      const data = await resp.json();
+
+      selectCategoria.innerHTML = '';
+
+      if (!resp.ok){
+        const optErro = document.createElement('option');
+        optErro.value = '';
+        optErro.textContent = data.error || 'Erro ao carregar categorias';
+        selectCategoria.appendChild(optErro);
+        return;
+      }
+
+      const categorias = data.categorias || [];
+      const optPlaceholder = document.createElement('option');
+      optPlaceholder.value = '';
+      optPlaceholder.textContent = categorias.length ? 'Selecione uma categoria...' : 'Nenhuma categoria encontrada';
+      selectCategoria.appendChild(optPlaceholder);
+
+      categorias.forEach((categoria) => {
+        const opt = document.createElement('option');
+        opt.value = categoria;
+        opt.textContent = categoria;
+        selectCategoria.appendChild(opt);
+      });
+    } catch(err){
+      selectCategoria.innerHTML = '';
+      const optErro = document.createElement('option');
+      optErro.value = '';
+      optErro.textContent = 'Falha de conexão ao carregar categorias';
+      selectCategoria.appendChild(optErro);
+    } finally {
+      selectCategoria.disabled = false;
+    }
+  }
+
   inputBusca.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') buscar();
+  });
+  selectCategoria.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') buscar();
   });
   btnBuscar.addEventListener('click', buscar);
@@ -936,7 +1186,10 @@
     if (e.target === modalManual) fecharModalManual();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modalManual.classList.contains('open')) fecharModalManual();
+    if (e.key === 'Escape'){
+      if (modalManual.classList.contains('open')) fecharModalManual();
+      if (modalAjuda.classList.contains('open')) fecharModalAjuda();
+    }
   });
 
   inputManualNome.addEventListener('input', (e) => {
@@ -983,9 +1236,11 @@
   }
 
   async function buscar(){
-    const valor = inputBusca.value.trim();
+    const valor = tipoBusca === 'categoria' ? selectCategoria.value.trim() : inputBusca.value.trim();
     if (!valor){
-      statusEl.textContent = 'Digite um nome, SKU ou categoria antes de buscar.';
+      statusEl.textContent = tipoBusca === 'categoria'
+        ? 'Selecione uma categoria antes de buscar.'
+        : 'Digite um nome ou SKU antes de buscar.';
       statusEl.className = 'status error';
       return;
     }

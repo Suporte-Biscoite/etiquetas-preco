@@ -23,6 +23,15 @@ const TABELAS_POR_LOJA = {
   aeroporto: "TABELA - AEROPORTO GRU",
 };
 
+// IDs dos filtros (template-tags) da pergunta 9294. Desde a atualização do
+// Metabase no Nexaas, cada parâmetro enviado em /api/card/:id/query precisa
+// do campo "id" — sem ele a API responde 400 ("missing required key").
+const PARAM_IDS = {
+  tabela_preco: "27f84810-299d-4cbe-8a19-da870b117cde",
+  nome_produto: "2cf96361-76e4-4401-adf3-299434b53a77",
+  sku: "b3a29672-d98b-48bd-9363-87d796567be7",
+};
+
 async function loginMetabase(email, password) {
   const resp = await fetch(`${METABASE_BASE_URL}/api/session`, {
     method: "POST",
@@ -90,6 +99,7 @@ export default async function handler(req, res) {
 
   const parameters = [
     {
+      id: PARAM_IDS.tabela_preco,
       type: "string/=",
       target: ["dimension", ["template-tag", "tabela_preco"]],
       value: [tabelaPreco],
@@ -98,6 +108,7 @@ export default async function handler(req, res) {
 
   if (tipo === "sku") {
     parameters.push({
+      id: PARAM_IDS.sku,
       type: "string/=",
       target: ["dimension", ["template-tag", "sku"]],
       value: [valor.trim()],
@@ -108,6 +119,7 @@ export default async function handler(req, res) {
     // pegamos a tabela inteira e resolvemos os dois casos depois de aplicar o filtro de Ativo.
   } else {
     parameters.push({
+      id: PARAM_IDS.nome_produto,
       type: "string/contains",
       target: ["dimension", ["template-tag", "nome_produto"]],
       value: [valor.trim()],
